@@ -1,0 +1,100 @@
+{
+  "users": [
+    {
+      "id": "1b348460-7ede-47b4-928d-1b3453e78805",
+      "username": "test_json_db_1771159077512",
+      "password": "$2b$10$pIxW3hvpMdE1.r8Vo7y6V.qjDQEXQyHb9DdkpZhLylx0M/HIIPAUy"
+    },
+    {
+      "id": "51566279-87b1-4c27-8102-98297035e296",
+      "username": "test_json_db_1771159149800",
+      "password": "$2b$10$MxAcP886vEplTQXIsSmohebS6Bd24flG0NZM.paYVh1jlEZgiJovm"
+    },
+    {
+      "id": "e9957145-490a-46ce-8fef-b98a6e3d40d9",
+      "username": "test_json_db_1771159201567",
+      "password": "$2b$10$xzDSECm6yiwg22K/ZShGkeSyjCKJpZJxqgPQrwBvTFKYoOk/Gg61y"
+    },
+    {
+      "id": "b93366d1-fa77-4359-b3a1-31a490a6d808",
+      "username": "admin123",
+      "password": "$2b$10$4nMVA/1WNOZQVxnt5VMOs.DXoVEgGFqCPGTpFNTexniaJpUbmWRFG"
+    }
+  ],
+  "cars": [
+    {
+      "id": "848895dc-317b-4798-b552-c26bdcfa92f1",
+      "userId": "1b348460-7ede-47b4-928d-1b3453e78805",
+      "name": "Test Car",
+      "type": "Hot Wheels",
+      "purchasePrice": 1,
+      "purchaseDate": "2023-01-01",
+      "condition": "Mint",
+      "status": "Owned",
+      "createdAt": "2026-02-15T12:37:58.425Z",
+      "updatedAt": "2026-02-15T12:37:58.425Z"
+    },
+    {
+      "id": "c8a0d5e6-8fad-464d-ba3f-c02fbe31f329",
+      "userId": "51566279-87b1-4c27-8102-98297035e296",
+      "name": "Test Car",
+      "type": "Hot Wheels",
+      "purchasePrice": 1,
+      "purchaseDate": "2023-01-01",
+      "condition": "Mint",
+      "status": "Owned",
+      "createdAt": "2026-02-15T12:39:10.315Z",
+      "updatedAt": "2026-02-15T12:39:10.315Z"
+    },
+    {
+      "id": "f309cbb9-6771-42d0-8e86-72ff734be275",
+      "userId": "b93366d1-fa77-4359-b3a1-31a490a6d808",
+      "name": "Lotus Cortina",
+      "type": "Mainline",
+      "purchasePrice": 167,
+      "purchaseDate": "2025-04-15",
+      "condition": "Mint",
+      "image": null,
+      "status": "Owned",
+      "notes": "",
+      "createdAt": "2026-02-15T12:43:22.059Z",
+      "updatedAt": "2026-02-15T17:30:40.300Z",
+      "color": "#fff5f5"
+    },
+    {
+      "id": "60eac0de-a078-4e1a-b1c1-c780a9c161dc",
+      "userId": "b93366d1-fa77-4359-b3a1-31a490a6d808",
+      "name": "Hellcat",
+      "type": "Mainline",
+      "purchasePrice": 200,
+      "purchaseDate": "2026-02-15",
+      "condition": "Mint",
+      "color": "pink",
+      "image": null,
+      "status": "Sold",
+      "notes": "",
+      "createdAt": "2026-02-15T17:18:16.851Z",
+      "updatedAt": "2026-02-15T17:33:22.090Z",
+      "soldPrice": 300,
+      "soldDate": "2026-02-15"
+    },
+    {
+      "id": "9d6b082b-1616-49a0-9577-0effdda453be",
+      "userId": "b93366d1-fa77-4359-b3a1-31a490a6d808",
+      "name": "king kuda",
+      "type": "Fantasy",
+      "purchasePrice": 179.99,
+      "purchaseDate": "2026-02-15",
+      "condition": "Mint",
+      "color": "#3cdd31",
+      "image": null,
+      "status": "Traded",
+      "notes": "",
+      "createdAt": "2026-02-15T17:39:58.095Z",
+      "updatedAt": "2026-02-15T18:15:27.716Z",
+      "tradedWith": "Sahil",
+      "tradeValue": 0,
+      "tradeDate": "2026-02-15"
+    }
+  ]
+}
