@@ -2,24 +2,31 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const ThemeContext = createContext();
 
+/**
+ * ThemeProvider
+ * 
+ * Manages the light/dark theme state.
+ * - Persists preference in LocalStorage.
+ * - Defaults to system preference if no stored value.
+ * - Updates the `<html>` tag class to allow CSS variable switching.
+ */
 export const ThemeProvider = ({ children }) => {
-    // Check local storage or system preference
+    // Check local storage or system preference on initialization
     const [theme, setTheme] = useState(() => {
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme) return savedTheme;
         return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     });
 
+    // Effect: Apply theme class to document root
     useEffect(() => {
         const root = window.document.documentElement;
 
-        // Remove old class
+        // Ensure we swap specific classes to avoid conflicts
         root.classList.remove(theme === 'dark' ? 'light' : 'dark');
-
-        // Add new class
         root.classList.add(theme);
 
-        // Save to local storage
+        // Persist
         localStorage.setItem('theme', theme);
     }, [theme]);
 

@@ -1,31 +1,49 @@
 const db = require('../utils/jsonDB');
 const { v4: uuidv4 } = require('uuid');
 
+/**
+ * Car Model
+ * 
+ * Represents a car in the collection.
+ * Includes methods to mimic Mongoose-like database operations
+ * (find, findById, save, update, delete) but operates on a local JSON file.
+ */
 class Car {
     constructor(data) {
         this.id = data.id || uuidv4();
-        this.userId = data.userId;
+        this.userId = data.userId; // Owner ID
         this.name = data.name;
-        this.type = data.type;
+        this.type = data.type; // e.g., 'Mainline', 'Premium'
         this.purchasePrice = data.purchasePrice;
         this.purchaseDate = data.purchaseDate;
-        this.condition = data.condition;
-        this.color = data.color; // Added color field
-        this.image = data.image; // Image is now optional
-        this.status = data.status || 'Owned';
+        this.condition = data.condition; // 'Carded', 'Loose'
+        this.color = data.color;
+        this.image = data.image;
+        this.status = data.status || 'Owned'; // 'Owned', 'Sold', 'Traded'
         this.notes = data.notes;
+
+        // Sale fields
         this.soldPrice = data.soldPrice;
         this.soldDate = data.soldDate;
+
+        // Trade fields
         this.tradedWith = data.tradedWith;
         this.tradeValue = data.tradeValue;
         this.tradeDate = data.tradeDate;
+
+        // Timestamps
         this.createdAt = data.createdAt || new Date().toISOString();
         this.updatedAt = new Date().toISOString();
     }
 
+    /**
+     * Find cars matching a query.
+     * Supports simplistic sorting.
+     */
     static find(query) {
         const cars = db.getCollection('cars');
         let filtered = cars.filter(c => {
+            // Check if all keys in query match the car's properties
             return Object.keys(query).every(key => c[key] === query[key]);
         });
 
@@ -81,6 +99,10 @@ class Car {
         return { msg: 'Car deleted' };
     }
 
+    /**
+     * Save the current car instance to the database.
+     * Upserts if details exist.
+     */
     async save() {
         const cars = db.getCollection('cars');
         const existingIndex = cars.findIndex(c => c.id === this.id);

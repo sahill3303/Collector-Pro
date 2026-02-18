@@ -77,24 +77,6 @@
       "updatedAt": "2026-02-15T17:33:22.090Z",
       "soldPrice": 300,
       "soldDate": "2026-02-15"
-    },
-    {
-      "id": "9d6b082b-1616-49a0-9577-0effdda453be",
-      "userId": "b93366d1-fa77-4359-b3a1-31a490a6d808",
-      "name": "king kuda",
-      "type": "Fantasy",
-      "purchasePrice": 179.99,
-      "purchaseDate": "2026-02-15",
-      "condition": "Mint",
-      "color": "#3cdd31",
-      "image": null,
-      "status": "Traded",
-      "notes": "",
-      "createdAt": "2026-02-15T17:39:58.095Z",
-      "updatedAt": "2026-02-15T18:15:27.716Z",
-      "tradedWith": "Sahil",
-      "tradeValue": 0,
-      "tradeDate": "2026-02-15"
     }
   ]
 }

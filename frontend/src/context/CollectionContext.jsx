@@ -8,11 +8,21 @@ export const useCollection = () => {
   return useContext(CollectionContext);
 };
 
+/**
+ * CollectionProvider
+ * 
+ * Manages the data state for the user's car collection.
+ * - Fetches cars from the backend.
+ * - Provides CRUD operations (add, update, delete).
+ * - Provides specialized actions like 'sell' and 'trade'.
+ * - Calculates aggregated statistics for the Dashboard.
+ */
 export const CollectionProvider = ({ children }) => {
   const { user } = useAuth();
   const [cars, setCars] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Fetch cars when the user is authenticated
   const fetchCars = async () => {
     if (user) {
       try {
@@ -20,10 +30,9 @@ export const CollectionProvider = ({ children }) => {
         setCars(res.data);
       } catch (err) {
         console.error('Error fetching cars:', err);
-        // Optionally handle error state
       }
     } else {
-      setCars([]);
+      setCars([]); // Clear cars if user logs out
     }
     setLoading(false);
   };
@@ -32,12 +41,16 @@ export const CollectionProvider = ({ children }) => {
     fetchCars();
   }, [user]);
 
-  // Actions
+  // --- Actions ---
+
+  /**
+   * Add a new car to the collection
+   */
   const addCar = async (carData) => {
     try {
       const res = await api.post('/cars', carData);
       setCars(prev => [res.data, ...prev]);
-      return res.data; // Return the new car
+      return res.data;
     } catch (err) {
       console.error('Error adding car:', err);
       alert('Failed to add car');
@@ -45,6 +58,9 @@ export const CollectionProvider = ({ children }) => {
     }
   };
 
+  /**
+   * Update an existing car
+   */
   const updateCar = async (id, updates) => {
     try {
       const res = await api.put(`/cars/${id}`, updates);
@@ -55,6 +71,9 @@ export const CollectionProvider = ({ children }) => {
     }
   };
 
+  /**
+   * Delete a car
+   */
   const deleteCar = async (id) => {
     try {
       await api.delete(`/cars/${id}`);
@@ -65,6 +84,9 @@ export const CollectionProvider = ({ children }) => {
     }
   };
 
+  /**
+   * Mark a car as Sold
+   */
   const sellCar = async (id, saleDetails) => {
     updateCar(id, {
       status: 'Sold',
@@ -73,6 +95,9 @@ export const CollectionProvider = ({ children }) => {
     });
   };
 
+  /**
+   * Mark a car as Traded
+   */
   const tradeCar = async (id, tradeDetails) => {
     updateCar(id, {
       status: 'Traded',
@@ -82,7 +107,12 @@ export const CollectionProvider = ({ children }) => {
     });
   };
 
-  // Dashboard Stats Helpers
+  // --- Statistics Helpers ---
+
+  /**
+   * Computes derived stats from the current cars array.
+   * Runs on every render, but fast enough for this dataset size.
+   */
   const getStats = () => {
     const owned = cars.filter(c => c.status === 'Owned');
     const sold = cars.filter(c => c.status === 'Sold');
@@ -90,13 +120,15 @@ export const CollectionProvider = ({ children }) => {
 
     const totalInvested = cars.reduce((acc, curr) => acc + (parseFloat(curr.purchasePrice) || 0), 0);
     const totalSoldValue = sold.reduce((acc, curr) => acc + (curr.soldPrice || 0), 0);
+
+    // Profit = Revenue - Cost (only for items that are sold)
     const totalProfit = totalSoldValue - sold.reduce((acc, curr) => acc + (parseFloat(curr.purchasePrice) || 0), 0);
 
     return {
       totalOwned: owned.length,
       totalInvested,
       totalProfit,
-      totalRevenue: totalSoldValue, // Added totalRevenue
+      totalRevenue: totalSoldValue,
       soldCount: sold.length,
       tradedCount: traded.length
     };
