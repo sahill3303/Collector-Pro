@@ -1,0 +1,528 @@
+================================================================================
+  HWPro - Hot Wheels Collection Tracker
+  PROJECT DOCUMENTATION
+  Last Updated: February 2026
+================================================================================
+
+--------------------------------------------------------------------------------
+TABLE OF CONTENTS
+--------------------------------------------------------------------------------
+  1. Project Overview
+  2. Tech Stack
+  3. Project Folder Structure
+  4. How to Run the Project
+  5. Backend - How It Works
+       5a. server.js (Entry Point)
+       5b. Routes
+       5c. Models (No Real Database - JSON File Storage)
+       5d. Middleware (JWT Auth)
+       5e. Environment Variables (.env)
+  6. Frontend - How It Works
+       6a. Entry Points
+       6b. Context (Global State)
+       6c. Pages
+       6d. Components
+       6e. API Utility
+  7. Authentication Flow (Login / Register / Logout)
+  8. Car Collection Flow (CRUD + Sell/Trade)
+  9. Data Storage (JSON File DB)
+  10. API Reference (All Endpoints)
+  11. Important Notes & Known Quirks
+
+================================================================================
+1. PROJECT OVERVIEW
+================================================================================
+
+HWPro is a full-stack web application for tracking a Hot Wheels die-cast car
+collection. Users can register an account, log in, and manage their personal
+collection. Each car can be:
+
+  - Added with details (name, type, color, price, condition, image, notes)
+  - Edited at any time
+  - Marked as Sold (with sale price and date)
+  - Marked as Traded (with trade partner, value, and date)
+  - Deleted from the collection
+
+The Dashboard shows aggregated statistics:
+  - Total cars Owned
+  - Total money Invested (sum of all purchase prices)
+  - Total Revenue (sum of all sold prices)
+  - Total Profit (Revenue - cost of sold cars)
+  - Count of Sold and Traded cars
+
+The app supports Dark Mode and Light Mode (toggled by the user).
+
+================================================================================
+2. TECH STACK
+================================================================================
+
+FRONTEND
+  - React (Vite-based setup)
+  - React Router DOM (v6) - for page navigation
+  - Axios - for HTTP requests to the backend
+  - Vanilla CSS - for all styling
+  - Google Fonts (Inter) - typography
+  - React Context API - for global state (Auth, Collection, Theme)
+
+BACKEND
+  - Node.js
+  - Express.js (v5)
+  - bcryptjs - for password hashing
+  - jsonwebtoken (JWT) - for authentication tokens
+  - uuid - for generating unique IDs
+  - dotenv - for environment variables
+  - cors - for cross-origin requests
+  - JSON File (data/db.json) as the database (NO MongoDB despite mongoose being listed in package.json - it is unused)
+
+================================================================================
+3. PROJECT FOLDER STRUCTURE
+================================================================================
+
+HWPro/
+│
+├── PROJECT_DOCS.txt          <-- This file
+├── .gitignore
+│
+├── frontend/                 <-- React frontend app
+│   ├── public/
+│   ├── src/
+│   │   ├── main.jsx          <-- React entry point (renders <App>)
+│   │   ├── App.jsx           <-- Root component, defines all routes
+│   │   ├── App.css           <-- Global minimal styles
+│   │   ├── index.css         <-- Main stylesheet (all custom CSS, dark mode, animations)
+│   │   │
+│   │   ├── context/          <-- React Context providers (Global State)
+│   │   │   ├── AuthContext.jsx       <-- Login, Register, Logout, user state
+│   │   │   ├── CollectionContext.jsx <-- Car CRUD, Sell, Trade, Stats
+│   │   │   └── ThemeContext.jsx      <-- Dark/Light mode toggle
+│   │   │
+│   │   ├── pages/            <-- Full-page components
+│   │   │   ├── Login.jsx             <-- Login page
+│   │   │   ├── Register.jsx          <-- Register page
+│   │   │   ├── Dashboard.jsx         <-- Stats overview (home page)
+│   │   │   ├── Collection.jsx        <-- List of all cars with filters
+│   │   │   ├── AddEditCar.jsx        <-- Add a car / Edit existing car
+│   │   │   └── CarDetails.jsx        <-- Full details of a single car
+│   │   │
+│   │   ├── components/       <-- Reusable UI components
+│   │   │   ├── CarCard.jsx           <-- Card tile shown in Collection list
+│   │   │   ├── SellModal.jsx         <-- Modal popup for Sell/Trade actions
+│   │   │   └── ui/
+│   │   │       └── Layout.jsx        <-- Main layout wrapper (Navbar + sidebar)
+│   │   │
+│   │   └── utils/
+│   │       └── api.js                <-- Axios instance with base URL & auth header
+│   │
+│   ├── package.json
+│   └── vite.config.js
+│
+└── server/                   <-- Node.js / Express backend
+    ├── server.js             <-- Express app entry point
+    ├── .env                  <-- Environment variables (JWT_SECRET, PORT)
+    ├── package.json
+    │
+    ├── routes/
+    │   ├── authRoutes.js     <-- /api/auth/* endpoints
+    │   └── collectionRoutes.js <-- /api/cars/* endpoints
+    │
+    ├── models/
+    │   ├── User.js           <-- User class with DB methods (find, save)
+    │   └── Car.js            <-- Car class with DB methods (find, save, update, delete)
+    │
+    ├── middleware/
+    │   └── authMiddleware.js <-- JWT verification middleware
+    │
+    ├── utils/
+    │   └── jsonDB.js         <-- JSON file read/write helper
+    │
+    └── data/
+        └── db.json           <-- The actual "database" file (JSON)
+
+================================================================================
+4. HOW TO RUN THE PROJECT
+================================================================================
+
+STEP 1: Start the Backend
+  - Open a terminal and navigate to the 'server' folder
+  - Run:  node server.js
+  - The backend will start on http://localhost:5000
+
+STEP 2: Start the Frontend
+  - Open another terminal and navigate to the 'frontend' folder
+  - Run:  npm run dev
+  - The frontend will start on http://localhost:5173 (Vite default)
+
+IMPORTANT: Both must be running at the same time for the app to work.
+
+The frontend sends API requests to http://localhost:5000 (configured in utils/api.js).
+
+================================================================================
+5. BACKEND - HOW IT WORKS
+================================================================================
+
+5a. server.js (Entry Point)
+------------------------------
+  - Loads environment variables from .env
+  - Creates an Express app
+  - Applies middleware: cors() and express.json()
+  - Mounts two route groups:
+      /api/auth  -> authRoutes.js
+      /api/cars  -> collectionRoutes.js
+  - Listens on PORT (default: 5000)
+
+5b. Routes
+------------------------------
+  authRoutes.js handles:
+    POST /api/auth/register  - Create a new user account
+    POST /api/auth/login     - Login and receive a JWT token
+    GET  /api/auth/user      - Get current logged-in user (requires token)
+
+  collectionRoutes.js handles:
+    GET    /api/cars         - Get all cars for the logged-in user
+    POST   /api/cars         - Add a new car
+    PUT    /api/cars/:id     - Update an existing car by ID
+    DELETE /api/cars/:id     - Delete a car by ID
+
+  All /api/cars routes are PROTECTED (require a valid JWT token).
+
+5c. Models (No Real Database)
+------------------------------
+  IMPORTANT: Despite mongoose being listed in package.json, it is NOT used.
+  The app uses a custom JSON-file-based database system.
+
+  User.js (User Model):
+    - Properties: id (uuid), username, password (hashed)
+    - Methods: findOne(query), findById(id), save()
+    - Designed to mimic Mongoose syntax so routes feel familiar
+
+  Car.js (Car Model):
+    - Properties: id (uuid), userId, name, type, purchasePrice,
+                  purchaseDate, condition, color, image, status,
+                  notes, soldPrice, soldDate, tradedWith,
+                  tradeValue, tradeDate, createdAt, updatedAt
+    - Methods: find(query).sort(), findById(id), findByIdAndUpdate(),
+               findByIdAndDelete(), save()
+    - Status values: 'Owned' | 'Sold' | 'Traded'
+
+5d. Middleware (JWT Auth)
+------------------------------
+  authMiddleware.js:
+    - Reads the token from the request header: Authorization: Bearer <token>
+    - Verifies the token using JWT_SECRET from .env
+    - Attaches the decoded user object to req.user
+    - If token is invalid or missing, returns 401 Unauthorized
+
+5e. Environment Variables (.env)
+------------------------------
+  File location: server/.env
+  Variables:
+    PORT=5000          <-- Port the backend runs on
+    JWT_SECRET=...     <-- Secret key for signing JWT tokens (keep this private!)
+
+================================================================================
+6. FRONTEND - HOW IT WORKS
+================================================================================
+
+6a. Entry Points
+------------------------------
+  main.jsx:
+    - Renders the <App /> component into the DOM
+
+  App.jsx:
+    - Wraps the whole app in three providers (order matters):
+        <ThemeProvider>        - Dark/Light mode
+          <AuthProvider>       - User authentication state
+            <CollectionProvider> - Car data & CRUD functions
+    - Defines all React Router routes:
+        /login      -> Login page (public)
+        /register   -> Register page (public)
+        /           -> Dashboard (protected)
+        /collection -> Collection list (protected)
+        /add        -> Add car form (protected)
+        /edit/:id   -> Edit car form (protected)
+        /car/:id    -> Car details page (protected)
+    - <PrivateRoute> component: redirects to /login if user is not logged in
+
+6b. Context (Global State)
+------------------------------
+  AuthContext.jsx:
+    - Stores: user (object), loading (bool)
+    - On app load: checks localStorage for a saved token, verifies
+      it with the backend, and restores the user session
+    - Functions exposed: login(), register(), logout()
+    - login/register: calls the API, saves JWT to localStorage, updates state
+    - logout: removes token from localStorage, sets user to null
+
+  CollectionContext.jsx:
+    - Stores: cars (array), loading (bool)
+    - Fetches cars from /api/cars whenever the user object changes (login/logout)
+    - Functions exposed:
+        addCar(carData)             - POST to /api/cars
+        updateCar(id, updates)      - PUT to /api/cars/:id
+        deleteCar(id)               - DELETE to /api/cars/:id
+        sellCar(id, saleDetails)    - Calls updateCar with status='Sold'
+        tradeCar(id, tradeDetails)  - Calls updateCar with status='Traded'
+        stats                       - Computed object with collection statistics
+    - getStats() calculates: totalOwned, totalInvested, totalProfit,
+                             totalRevenue, soldCount, tradedCount
+
+  ThemeContext.jsx:
+    - Stores: theme ('dark' | 'light')
+    - Toggles a CSS class on <body> for dark/light mode
+    - Persists preference in localStorage
+
+6c. Pages
+------------------------------
+  Login.jsx:
+    - Username + password form
+    - Calls AuthContext.login()
+    - On success, redirects to / (Dashboard)
+    - Has a link to /register
+
+  Register.jsx:
+    - Username + password form
+    - Calls AuthContext.register()
+    - On success, redirects to / (Dashboard)
+    - Has a link back to /login
+
+  Dashboard.jsx:
+    - Reads 'stats' from CollectionContext
+    - Displays stat cards: Total Owned, Invested, Revenue, Profit, Sold, Traded
+    - Shows a recent activity section
+
+  Collection.jsx:
+    - Lists all cars using <CarCard> components
+    - Supports filtering by status (All / Owned / Sold / Traded)
+    - Has a search bar to filter by car name
+    - Has an "Add Car" button linking to /add
+
+  AddEditCar.jsx:
+    - Dual-purpose form: handles both adding a new car and editing an existing one
+    - If URL has an :id param -> edit mode (pre-fills form with existing car data)
+    - If no :id -> add mode
+    - Calls addCar() or updateCar() from CollectionContext
+    - On success, redirects to /collection
+
+  CarDetails.jsx:
+    - Shows all details of a single car
+    - Has buttons: Edit, Sell, Trade, Delete
+    - Sell/Trade opens <SellModal>
+    - Delete calls deleteCar() and redirects to /collection
+
+6d. Components
+------------------------------
+  CarCard.jsx:
+    - Displays a summary tile for a car (image, name, type, status badge, price)
+    - Clicking the card navigates to /car/:id
+    - Status badge colors: Owned=green, Sold=red, Traded=orange
+
+  SellModal.jsx:
+    - Popup modal for entering sale or trade details
+    - Sell: collects price + date, calls sellCar()
+    - Trade: collects tradedWith + value + date, calls tradeCar()
+
+  Layout.jsx (ui/Layout.jsx):
+    - Main shell for all protected pages
+    - Contains the sidebar/navbar with navigation links
+    - Contains the dark mode toggle button
+    - Contains the logout button (calls AuthContext.logout())
+    - Renders <Outlet /> for nested routes
+
+6e. API Utility (utils/api.js)
+------------------------------
+  - An Axios instance pre-configured with:
+      baseURL: http://localhost:5000/api
+  - A request interceptor automatically adds the JWT token to every request:
+      Authorization: Bearer <token from localStorage>
+  - All context files import from this instead of using axios directly
+
+================================================================================
+7. AUTHENTICATION FLOW
+================================================================================
+
+REGISTER:
+  User fills form -> Register.jsx calls register() ->
+  POST /api/auth/register -> bcrypt hashes password ->
+  User saved to db.json -> JWT token created & returned ->
+  Token saved to localStorage -> user state set -> redirected to /
+
+LOGIN:
+  User fills form -> Login.jsx calls login() ->
+  POST /api/auth/login -> bcrypt compares password ->
+  JWT token created & returned -> Token saved to localStorage ->
+  user state set -> redirected to /
+
+SESSION RESTORE (on page refresh):
+  App.jsx loads -> AuthProvider's useEffect runs ->
+  Reads token from localStorage -> GET /api/auth/user (with token in header) ->
+  User data returned & set in state -> App renders normally
+
+LOGOUT:
+  User clicks Logout in Layout ->
+  localStorage.removeItem('token') ->
+  user state set to null ->
+  <PrivateRoute> detects no user ->
+  Redirected to /login
+
+================================================================================
+8. CAR COLLECTION FLOW (CRUD + SELL/TRADE)
+================================================================================
+
+ADD CAR:
+  /add page -> fill form -> submit ->
+  addCar(formData) in CollectionContext ->
+  POST /api/cars (with JWT) ->
+  New car saved to db.json with userId ->
+  cars state updated with new car -> redirected to /collection
+
+EDIT CAR:
+  /edit/:id page -> form pre-filled with existing data ->
+  submit -> updateCar(id, formData) ->
+  PUT /api/cars/:id (with JWT) ->
+  Car updated in db.json -> cars state updated -> redirected to /collection
+
+DELETE CAR:
+  CarDetails.jsx -> click Delete ->
+  deleteCar(id) -> DELETE /api/cars/:id ->
+  Car removed from db.json -> removed from cars state ->
+  Redirected to /collection
+
+SELL CAR:
+  CarDetails.jsx -> click Sell ->
+  SellModal opens -> enter sale price + date ->
+  sellCar(id, { price, date }) ->
+  Internally calls updateCar(id, { status:'Sold', soldPrice, soldDate }) ->
+  PUT /api/cars/:id -> db.json updated -> car status changed to 'Sold'
+
+TRADE CAR:
+  Same as Sell but sets status='Traded', tradedWith, tradeValue, tradeDate
+
+================================================================================
+9. DATA STORAGE (JSON FILE DATABASE)
+================================================================================
+
+File: server/data/db.json
+
+Structure:
+{
+  "users": [
+    {
+      "id": "uuid-string",
+      "username": "john",
+      "password": "$2a$10$hashedpassword..."
+    }
+  ],
+  "cars": [
+    {
+      "id": "uuid-string",
+      "userId": "uuid-of-owner",
+      "name": "Bone Shaker",
+      "type": "Mainline",
+      "purchasePrice": 150,
+      "purchaseDate": "2024-01-15",
+      "condition": "Carded",
+      "color": "Red",
+      "image": "url-or-base64",
+      "status": "Owned",
+      "notes": "Rare variant",
+      "soldPrice": null,
+      "soldDate": null,
+      "tradedWith": null,
+      "tradeValue": null,
+      "tradeDate": null,
+      "createdAt": "2024-01-15T10:00:00.000Z",
+      "updatedAt": "2024-01-15T10:00:00.000Z"
+    }
+  ]
+}
+
+The jsonDB utility (server/utils/jsonDB.js) handles:
+  - getCollection(name): reads db.json, returns the array for 'users' or 'cars'
+  - saveCollection(name, data): writes the updated array back to db.json
+
+================================================================================
+10. API REFERENCE (ALL ENDPOINTS)
+================================================================================
+
+BASE URL: http://localhost:5000
+
+AUTH ROUTES:
+  POST   /api/auth/register
+    Body: { username, password }
+    Returns: { token, user: { id, username } }
+
+  POST   /api/auth/login
+    Body: { username, password }
+    Returns: { token, user: { id, username } }
+
+  GET    /api/auth/user
+    Headers: Authorization: Bearer <token>
+    Returns: { id, username }
+
+CAR ROUTES (all require Authorization header):
+  GET    /api/cars
+    Returns: Array of car objects for the logged-in user
+
+  POST   /api/cars
+    Body: { name, type, purchasePrice, purchaseDate, condition,
+            color, image, status, notes }
+    Returns: The created car object
+
+  PUT    /api/cars/:id
+    Body: Any car fields to update (partial update supported)
+    Returns: The updated car object
+
+  DELETE /api/cars/:id
+    Returns: { msg: 'Car removed' }
+
+================================================================================
+11. IMPORTANT NOTES & KNOWN QUIRKS
+================================================================================
+
+1.  NO REAL DATABASE:
+    Despite 'mongoose' being in package.json, it is NOT used.
+    All data is stored in server/data/db.json as plain JSON.
+    The Car and User models are custom classes that mimic Mongoose syntax.
+    This means there is no MongoDB connection or URI needed.
+
+2.  CAR ID FORMAT:
+    Cars use string UUIDs (e.g., "a1b2c3d4-...") as their 'id' field, NOT
+    MongoDB's '_id'. The frontend uses car.id (not car._id) throughout.
+
+3.  IMAGE STORAGE:
+    No file upload server is set up. Car images are stored as URLs (from the
+    web) or base64 strings entered by the user in the form.
+
+4.  JWT TOKEN EXPIRY:
+    Tokens are valid for 30 days. After that, the user will be automatically
+    logged out on their next page refresh.
+
+5.  DATA SECURITY:
+    The db.json file stores all user data including hashed passwords.
+    This is fine for development/personal use but NOT production-ready.
+    For production, use a proper database (MongoDB, PostgreSQL, etc.)
+
+6.  CORS:
+    The backend allows all origins (cors() with no config). If deployed,
+    restrict this to the frontend's domain for security.
+
+7.  PORT CONFIGURATION:
+    Backend defaults to port 5000. If you change it in .env, also update
+    the baseURL in frontend/src/utils/api.js.
+
+8.  DARK MODE PERSISTENCE:
+    The selected theme (dark/light) is saved to localStorage and
+    automatically restored on every page load.
+
+9.  UPDATING STATE AFTER EDIT:
+    CollectionContext.updateCar() replaces cars using car.id for matching.
+    Since cars use UUID strings as their id, this works correctly. Be aware
+    if ever switching to MongoDB (_id would be used instead).
+
+10. PRICES IN RUPEES (₹):
+    All monetary values are displayed in Indian Rupees (₹).
+    Values are stored as plain numbers in the database.
+
+================================================================================
+END OF DOCUMENTATION
+================================================================================
