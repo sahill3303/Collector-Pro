@@ -19,6 +19,11 @@
       "id": "b93366d1-fa77-4359-b3a1-31a490a6d808",
       "username": "admin123",
       "password": "$2b$10$4nMVA/1WNOZQVxnt5VMOs.DXoVEgGFqCPGTpFNTexniaJpUbmWRFG"
+    },
+    {
+      "id": "40009597-9897-40b3-889b-5ad701c23141",
+      "username": "sahil",
+      "password": "$2b$10$OA.e4y3ssoXh8LIkGbsYLuuUxzsYhMVSajl3fZJF8bWu5tLX7uRFu"
     }
   ],
   "cars": [
