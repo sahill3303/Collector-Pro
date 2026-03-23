@@ -27,14 +27,14 @@ router.post('/register', async (req, res) => {
             password
         });
 
-        // Hash password
+        // Hash password for security purpose
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(password, salt);
 
         // Save to "DB"
         await user.save();
 
-        // Create JWT Payload
+        // Create JWT Payload, will have to studt this part
         const payload = {
             user: {
                 id: user.id,
